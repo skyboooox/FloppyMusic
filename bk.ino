@@ -9,7 +9,7 @@ float hz_dir = 0.001;
 int prevHz = 0;
 long hz_to_us(long hz)
 {
-  return 2000000 * 1000 / hz;
+  return 2000000 / hz;
 }
 
 long last_move = 0;
@@ -33,24 +33,12 @@ void move()
   digitalWrite(DIR_PIN, HIGH);
 }
 
-float prev_hz = 0;
 void step()
 {
   if (current_hz == 0)
-  {
-    prev_hz = 0;
     return;
-  }
-  if (prev_hz == 0)
-  {
-    prev_hz = current_hz;
-  }
-  else
-  {
-    prev_hz += ((float)current_hz - prev_hz) * 0.0003;
-  }
-  // long d = hz_to_us(current_hz);
-  long d = hz_to_us((long)(prev_hz * 1000));
+
+  long d = hz_to_us(current_hz);
   if (d + last_move < micros())
   {
     last_move = micros();
@@ -70,26 +58,10 @@ void task_step(void *)
 void task_melody(void *)
 {
   static int all[] = {
-      1, 10, 2, 11, 3, 4, 12, 5, 13, 6, 14, 7};
+      1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
 
   static int delays[] = {
-      130,
-      138,
-      147,
-      155,
-      164,
-      174,
-      185,
-      196,
-      207,
-      220,
-      233,
-      246,
-
-      261, 277, 293, 311, 329, 349, 369, 392, 415, 440, 466, 493};
-
-  static int touchsignal[] = {
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+      130, 147, 164, 174, 196, 220, 246, 138, 155, 185, 207, 233};
 
   static long last_change = 0;
   static long index = 0;
@@ -98,43 +70,16 @@ void task_melody(void *)
     int empty = 1;
     for (int i = 0; i < 12; i++)
     {
-      touchsignal[i] = touchRead(all[i]);
+      int value = touchRead(all[i]);
       yield();
-    }
-
-    int max = 0;
-    int max_key = -1;
-    int min = 100000;
-    long sum = 0;
-
-    for (int i = 0; i < 12; i++)
-    {
-      if (max < touchsignal[i])
+      if (value > 300)
       {
-        max_key = i;
-        max = touchsignal[i];
+        current_hz = (int)delays[i];
+        empty = 0;
+        break;
       }
-      if (min > touchsignal[i])
-      {
-        min = touchsignal[i];
-      }
-      sum += touchsignal[i];
     }
-    // Serial.print("max = ");
-    // Serial.print(max);
-    // Serial.print(", min = ");
-    // Serial.print(min);
-    // Serial.print(", sum = ");
-    // Serial.println(sum);
-    if (max > 600)
-    {
-      if (min > 210)
-      {
-        max_key += 12;
-      }
-      current_hz = (int)delays[max_key];
-    }
-    else
+    if (empty)
     {
       current_hz = 0;
     }
