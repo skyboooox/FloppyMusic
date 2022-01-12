@@ -1,8 +1,13 @@
 
 #include <WiFi.h>
 
+#include "Adafruit_TCS34725.h"
+// #define TCS34725_RDATAL (0x16)
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
+
 int DIR_PIN = 33;
 int STEP_PIN = 34;
+int has_disk = 0;
 
 float hz = 100;
 float hz_dir = 0.001;
@@ -22,7 +27,7 @@ int dir = 1;
 void move()
 {
   steps++;
-  if (steps > 60)
+  if (steps > 80)
   {
     dir = dir == 1 ? 0 : 1;
     steps = 0;
@@ -129,6 +134,47 @@ void task_melody(void *)
   }
 }
 
+void task_color(void *)
+{
+
+  // uint16_t TCS_r = tcs.read16(TCS34725_RDATAL);
+  while (true)
+  {
+    uint16_t TCS_r, TCS_g, TCS_b, TCS_c;
+
+    tcs.getRawData(&TCS_r, &TCS_g, &TCS_b, &TCS_c);
+    // TCS_colorTemp = tcs.calculateColorTemperature_dn40(TCS_r, TCS_g, TCS_b, TCS_c);
+    // lux = tcs.calculateLux(TCS_r, TCS_g, TCS_b);
+
+    if (TCS_r > 1500 && TCS_g > 1500 && TCS_b > 1500 && TCS_c > 3000)
+    {
+
+      has_disk = 1;
+    }
+    else
+    {
+      has_disk = 0;
+    }
+
+    // Serial.print("R: ");
+    // Serial.print(TCS_r, DEC);
+    // Serial.println(" ");
+    // Serial.print("G: ");
+    // Serial.print(TCS_g, DEC);
+    // Serial.print(" ");
+    // Serial.print("B: ");
+    // Serial.print(TCS_b, DEC);
+    // Serial.print(" ");
+    // Serial.print("C: ");
+    // Serial.print(TCS_c, DEC);
+    // Serial.print(" ");
+    // Serial.println(" ");
+    vTaskDelay(100);
+
+    Serial.println(has_disk);
+  }
+}
+
 void loop()
 {
   delay(100);
@@ -139,20 +185,14 @@ void setup()
   Serial.begin(115200);
   delay(2000);
 
-  touchSetCycles(0x0005, 0x0005);
+  touchSetCycles(0x0005, 0x0005); //触摸读取频率
 
-  pinMode(DIR_PIN, OUTPUT);
-  pinMode(STEP_PIN, OUTPUT);
+  Wire.begin(8, 9); //颜色传感器I2C
+
+  pinMode(DIR_PIN, OUTPUT);  //软驱方向
+  pinMode(STEP_PIN, OUTPUT); //软驱步进
+
   xTaskCreate(task_step, "task_step", 2048, NULL, 1, NULL);
   xTaskCreate(task_melody, "task_melody", 4096, NULL, 1, NULL);
+  xTaskCreate(task_color, "task_color", 4096, NULL, 2, NULL);
 }
-
-// if (hz > 300)
-// {
-//   hz_dir = -0.001;
-// }
-// else if (hz < 100)
-// {
-//   hz_dir = 0.001;
-// }
-// hz += hz_dir;
