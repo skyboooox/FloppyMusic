@@ -62,6 +62,12 @@ inline void _step()
 
 inline void _allocate()
 {
+  if (chn_flag[CHN_SOCKET])
+  {
+    current_key = chn_key[CHN_SOCKET];
+    current_hz = note_freq[current_key];
+    return;
+  }
   if (chn_flag[CHN_SONG])
   {
     current_key = chn_key[CHN_SONG];

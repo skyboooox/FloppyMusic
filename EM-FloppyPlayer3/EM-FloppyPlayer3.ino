@@ -7,6 +7,7 @@
 #include "led.h"
 #include "player.h"
 #include "sheet.h"
+#include "network.h"
 
 void task_debug(void *)
 {
@@ -27,17 +28,23 @@ void task_debug(void *)
 
 void task_logic(void *)
 {
+  static int prev_disk_state = 0;
   while (true)
   {
     vTaskDelay(100);
-    if (color_state > 0)
+
+    if (prev_disk_state != color_state)
     {
-      player_play("newyear", json, 1);
+      if (color_state)
+      {
+        player_play("newyear", json, 1);
+      }
+      else
+      {
+        player_stop(true);
+      }
     }
-    else
-    {
-      player_stop(true);
-    }
+    prev_disk_state = color_state;
   }
 }
 
@@ -45,6 +52,7 @@ void setup()
 {
   Serial.begin(115200);
   delay(2000);
+  setup_network();
   setup_floppy();
   setup_sensors();
   setup_touch();

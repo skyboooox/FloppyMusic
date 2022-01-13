@@ -55,7 +55,14 @@ void task_leds(void *)
     {
       led_cache[i] += (led_target[i] - led_cache[i]) * led_ease[i];
       // changing the LED brightness with PWM
-      ledcWrite(i, (int)(led_cache[i] * 255));
+      if (chn_key[CHN_SOCKET])
+      {
+        ledcWrite(i, 255 - (int)(led_cache[i] * 255));
+      }
+      else
+      {
+        ledcWrite(i, (int)(led_cache[i] * 255));
+      }
     }
     vTaskDelay(5);
   }
