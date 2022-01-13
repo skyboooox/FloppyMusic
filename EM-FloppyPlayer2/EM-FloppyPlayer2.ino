@@ -136,6 +136,7 @@ void task_play(void *)
     {
       playHead = 0;
       midi_start = 0;
+      midi_hz = 0;
       vTaskDelay(1);
       continue;
     }
@@ -158,9 +159,10 @@ void task_play(void *)
       }
       playHead = playHead + 3;
       midi_time = doc["sheet"][playHead];
-      Serial.print("midi_hz:");
-      Serial.println(midi_hz);
     }
+    current_hz = midi_hz;
+    // Serial.print("midi_hz:");
+    // Serial.println(midi_hz);
     vTaskDelay(1);
   }
 }
@@ -262,12 +264,14 @@ void task_audioMux(void *)
 
   while (true)
   {
+
     if (has_disk == 0)
     {
 
       current_hz = touch_hz;
     }
-    else if (has_disk == 1)
+
+    if (has_disk == 1)
     {
       current_hz = midi_hz;
       // Serial.print("midi:");
@@ -277,7 +281,7 @@ void task_audioMux(void *)
     vTaskDelay(1);
   }
 }
-
+//
 void loop()
 {
   delay(100);
