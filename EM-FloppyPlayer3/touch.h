@@ -51,7 +51,7 @@ void task_touch(void *)
     // Serial.print(min);
     // Serial.print(", sum = ");
     // Serial.println(sum);
-    if (max > 600)
+    if (max > 500)
     {
       if (min > 210)
       {

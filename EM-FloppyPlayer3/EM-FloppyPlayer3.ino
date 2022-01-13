@@ -14,10 +14,10 @@ void task_debug(void *)
   while (true)
   {
     DBG("DISK", color_state);
-    // DBG("R", TCS_r);
+    DBG("R", TCS_r);
     // DBG("G", TCS_g);
     // DBG("B", TCS_b);
-    // DBG("C", TCS_c);
+    DBG("C", TCS_c);
     // Serial.print(", ");
     DBG("CHN_KEY", chn_key[CHN_TOUCH]);
     DBG("CDELAY", current_delay);

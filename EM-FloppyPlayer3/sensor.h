@@ -23,7 +23,8 @@ void task_color(void *)
       TCS_r = tcs.read16(TCS34725_RDATAL);
       TCS_g = tcs.read16(TCS34725_GDATAL);
       TCS_b = tcs.read16(TCS34725_BDATAL);
-      if (TCS_r > 550 && TCS_c > 2000)
+      //if (TCS_r > 550 && TCS_c > 2000)
+      if (TCS_r > 2500 && TCS_c > 5000)
       {
         color_state = 1;
         // Serial.println("insert disk");
