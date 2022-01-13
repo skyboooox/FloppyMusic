@@ -6,6 +6,7 @@
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
 
 #include <ArduinoJson.h>
+#include "sheet.h"
 
 int has_disk = 0;   //0:无软盘 1:有软盘
 int midi_start = 0; //0:停止播放  1:在播放
@@ -35,9 +36,6 @@ const uint16_t note_freq[] = {
     4186, 4435, 4699, 4978, 5274, 5588, 5920, 6272, 6645, 7040, 7459, 7902, /* 108 - 119 */
     8372, 8870, 9397, 9956, 10548, 11175, 11840, 12544                      /* 120 - 127 */
 };
-
-char json[] = "{\"sheet\":[1,1,48,1000,2,48,2000,1,50,3000,2,50,4000,1,50,5000,2,50,6000,1,52,7000,2,52,8000,1,54,9000,2,54]}";
-//[序号,命令,音符]
 
 /*------------------------电机驱动-----------------------------*/
 
@@ -117,33 +115,32 @@ void task_play(void *)
 
   while (true)
   {
-    if (midi_start == 0)
-    {
-      first_time = millis();
-    }
-
     if (playHead >= amount_number)
     {
       playHead = 0;
       midi_start = 0;
     }
-    else if (midi_start == 0 && has_disk == 1)
+
+    if (midi_start == 0 && has_disk == 1)
     {
 
       midi_start = 1;
+      first_time = millis();
     }
-    else if (midi_start == 0 || has_disk == 0)
+    if (midi_start == 0 || has_disk == 0)
     {
       playHead = 0;
       midi_start = 0;
       midi_hz = 0;
-      vTaskDelay(1);
+      vTaskDelay(100);
       continue;
     }
     now_time = millis();
-
-    if ((now_time - first_time) > midi_time && midi_start == 1)
+    // Serial.println(first_time);
+    int deltaTime = now_time - first_time;
+    if (deltaTime > midi_time && midi_start == 1)
     {
+      Serial.println(playHead);
       midi_time = doc["sheet"][playHead];
       midi_active = doc["sheet"][playHead + 1];
       midi_tone = doc["sheet"][playHead + 2];
@@ -231,6 +228,7 @@ void task_melody(void *)
   }
 }
 /*------------------------颜色传感器-----------------------------*/
+
 void task_color(void *)
 {
 
