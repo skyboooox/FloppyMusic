@@ -7,18 +7,20 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS347
 
 #include <ArduinoJson.h>
 
-/*     FLAGS    */
-int has_disk = 0;  //0:无软盘  1:有软盘
-long playHead = 0; //播放位置
-int web_play = 0;  //0:web停止播放 1:web正在播放
-
-int DIR_PIN = 33;  //软驱方向
-int STEP_PIN = 34; //软驱电机步进
-
-int midi_hz;
-long touch_hz;
-int web_hz;
+int has_disk = 0;   //0:无软盘 1:有软盘
+int midi_start = 0; //0:停止播放  1:在播放
+long playHead = 0;  //播放位置
 long current_hz = 0;
+long midi_hz = 0;
+long touch_hz = 0;
+long web_hz = 0;
+
+int DIR_PIN = 33;
+int STEP_PIN = 34;
+
+float hz = 100;
+float hz_dir = 0.001;
+int prevHz = 0;
 
 const uint16_t note_freq[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                     /*   0 -  11 */
@@ -34,37 +36,13 @@ const uint16_t note_freq[] = {
     8372, 8870, 9397, 9956, 10548, 11175, 11840, 12544                      /* 120 - 127 */
 };
 
-char json[] = "{\"sheet\":[1,1,48,1000,2,48,1000,1,50,2000,2,50,2000,1,50,3000,2,50,3000,1,52,4000,2,52,4000,1,54,5000,2,54]}";
+char json[] = "{\"sheet\":[1,1,48,1000,2,48,2000,1,50,3000,2,50,4000,1,50,5000,2,50,6000,1,52,7000,2,52,8000,1,54,9000,2,54]}";
 //[序号,命令,音符]
 
-/*     占坑管理器     */
-void task_queue(void *)
-{
-  while (true)
-  {
-    Serial.println(has_disk);
+/*------------------------电机驱动-----------------------------*/
 
-    if (has_disk == 1)
-    {
-
-      current_hz = midi_hz;
-    }
-    if (has_disk == 0)
-    {
-      current_hz = touch_hz;
-    }
-  }
-}
-
-/*     软驱 电机驱动    */
-float hz = 100;
-float hz_dir = 0.001;
-int prevHz = 0;
-long hz_to_us(long hz)
-{
-  return 2000000 * 1000 / hz;
-}
 long last_move = 0;
+
 int current_voltage = 0;
 int steps = 100;
 int dir = 1;
@@ -81,6 +59,11 @@ void move()
   // current_voltage = current_voltage == 1 ? 0 : 1;
   digitalWrite(DIR_PIN, LOW);
   digitalWrite(DIR_PIN, HIGH);
+}
+
+long hz_to_us(long hz)
+{
+  return 2000000 * 1000 / hz;
 }
 
 float prev_hz = 0;
@@ -117,16 +100,16 @@ void task_step(void *)
   }
 }
 
-/*     MIDI播放器    */
-
+/*------------------------MIDI播放器-----------------------------*/
 void task_play(void *)
 {
   //load song
   static DynamicJsonDocument doc(40960);
   deserializeJson(doc, json);
 
-  static long first_timer, now_time;
+  static long first_time, now_time;
   long midi_time = 1, midi_active, midi_tone;
+  int midi_hz;
 
   JsonArray array = doc["sheet"];
 
@@ -134,22 +117,31 @@ void task_play(void *)
 
   while (true)
   {
-
-    if (has_disk == 0) //无盘不播放
+    if (midi_start == 0)
     {
+      first_time = millis();
+    }
+
+    if (playHead >= amount_number)
+    {
+      playHead = 0;
+      midi_start = 0;
+    }
+    else if (midi_start == 0 && has_disk == 1)
+    {
+
+      midi_start = 1;
+    }
+    else if (midi_start == 0 || has_disk == 0)
+    {
+      playHead = 0;
+      midi_start = 0;
       vTaskDelay(1);
       continue;
     }
-    if (playHead >= amount_number)
-    {
-      playHead = -1;
-      vTaskDelay(1000);
-      continue;
-    }
-
     now_time = millis();
 
-    if ((now_time - first_timer) > midi_time && has_disk == 1 && playHead > 0)
+    if ((now_time - first_time) > midi_time && midi_start == 1)
     {
       midi_time = doc["sheet"][playHead];
       midi_active = doc["sheet"][playHead + 1];
@@ -159,22 +151,20 @@ void task_play(void *)
       {
         midi_hz = 0;
       }
+
       if (midi_active == 1)
       {
         midi_hz = note_freq[midi_tone];
       }
       playHead = playHead + 3;
       midi_time = doc["sheet"][playHead];
-      // Serial.println(playHead);
+      Serial.print("midi_hz:");
+      Serial.println(midi_hz);
     }
     vTaskDelay(1);
-
-    // Serial.println(now_time);
   }
 }
-
-/*     触摸按键    */
-
+/*------------------------触摸-----------------------------*/
 void task_melody(void *)
 {
   static int all[] = {
@@ -217,12 +207,19 @@ void task_melody(void *)
       }
       sum += touchsignal[i];
     }
+    // Serial.print("max = ");
+    // Serial.print(max);
+    // Serial.print(", min = ");
+    // Serial.print(min);
+    // Serial.print(", sum = ");
+    // Serial.println(sum);
     if (max > 600)
     {
       if (min > 210)
       {
         max_key += 12;
       }
+
       touch_hz = (int)delays[max_key];
     }
     else
@@ -231,12 +228,9 @@ void task_melody(void *)
     }
   }
 }
-
-/*     颜色传感器    */
-
+/*------------------------颜色传感器-----------------------------*/
 void task_color(void *)
 {
-  // tcs.begin();
 
   // uint16_t TCS_r = tcs.read16(TCS34725_RDATAL);
   while (true)
@@ -246,30 +240,41 @@ void task_color(void *)
     tcs.getRawData(&TCS_r, &TCS_g, &TCS_b, &TCS_c);
     // TCS_colorTemp = tcs.calculateColorTemperature_dn40(TCS_r, TCS_g, TCS_b, TCS_c);
     // lux = tcs.calculateLux(TCS_r, TCS_g, TCS_b);
-    // Serial.print("R: ");
-    // Serial.print(TCS_r, DEC);
-    // Serial.print(" ");
-    // Serial.print("G: ");
-    // Serial.print(TCS_g, DEC);
-    // Serial.print(" ");
-    // Serial.print("B: ");
-    // Serial.print(TCS_b, DEC);
-    // Serial.print(" ");
-    // Serial.print("C: ");
-    // Serial.print(TCS_c, DEC);
-    // Serial.print(" ");
-    // Serial.println(" ");
-    // if (TCS_r > 1200 && TCS_g > 1500 && TCS_b > 1500 && TCS_c > 4000)
+
     if (TCS_r > 500)
     {
 
       has_disk = 1;
+      // Serial.println("insert disk");
     }
     else
     {
       has_disk = 0;
+      // Serial.println("disk lost");
     }
     vTaskDelay(100);
+  }
+}
+
+/*------------------------占坑管理器-----------------------------*/
+void task_audioMux(void *)
+{
+
+  while (true)
+  {
+    if (has_disk == 0)
+    {
+
+      current_hz = touch_hz;
+    }
+    else if (has_disk == 1)
+    {
+      current_hz = midi_hz;
+      // Serial.print("midi:");
+      // Serial.println(current_hz);
+    }
+
+    vTaskDelay(1);
   }
 }
 
@@ -291,8 +296,8 @@ void setup()
   pinMode(STEP_PIN, OUTPUT); //软驱步进
 
   xTaskCreate(task_step, "task_step", 2048, NULL, 1, NULL);
-  xTaskCreate(task_color, "task_color", 2048, NULL, 1, NULL);
   xTaskCreate(task_melody, "task_melody", 4096, NULL, 1, NULL);
+  xTaskCreate(task_color, "task_color", 2048, NULL, 2, NULL);
   xTaskCreate(task_play, "task_play", 4096, NULL, 1, NULL);
-  xTaskCreate(task_queue, "task_queue", 2048, NULL, 1, NULL);
+  xTaskCreate(task_audioMux, "task_audioMux", 2048, NULL, 1, NULL);
 }
