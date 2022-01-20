@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>Emerge / Stepper Piano</title>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1">
+    <script src='./inc/jasmid/stream.js'></script>
+    <script src='./inc/jasmid/midifile.js'></script>
+    <script src='./inc/jasmid/replayer.js'></script>
+    <script src='./js/vue.js'></script>
+    <script src='./data.js'></script>
+    <script src='./midi/midi.js?3'></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .border {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 7px solid #333;
+            pointer-events: none;
+        }
+
+        .q {
+            transform: skewY(-29deg);
+            padding-left: 10%;
+            overflow-x: hidden;
+            font-weight: bolder;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        .large {
+            font-size: 2rem;
+            letter-spacing: -0.1rem;
+            color: #333;
+        }
+
+        .hr,
+        .line {
+            background: #333;
+            padding-left: 2rem;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            margin-top: 0.5rem;
+            transition: all 0.5s ease;
+        }
+
+        .active {
+            transform: translateX(30px);
+            opacity: 0.5;
+        }
+
+        .song {
+            color: white;
+        }
+
+        .name {
+            font-size: 1.2rem;
+        }
+
+        .author {
+            font-weight: lighter;
+            font-size: 0.7rem;
+        }
+
+        .duration {
+            opacity: 0.5;
+            padding: 0.5rem;
+        }
+
+        .mask {
+            z-index: 99999;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            opacity: 0.7;
+            position: fixed;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: white;
+            text-align: center;
+            line-height: 1.5rem;
+            padding-top: 30%;
+        }
+
+        .logo {
+            display: block;
+            margin: 2rem;
+            color: black;
+            text-decoration: none;
+            margin-top: 10rem;
+            text-align: center;
+            line-height: 1.5rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="border"></div>
+    <div class='pp' id='app'>
+        <img src='./render5.jpg' style='width: 100%'>
+        <div class='q'>
+            <div class='large'>SELECT SONGS</div>
+            <div v-on:click="select(-1)" v-bind:class="{song: 1, hr: 1, active: playing == -1}">
+                <div class='name'>/ IDLE</div>
+                <div class='author'>STOP</div>
+            </div>
+            <div v-on:click="select(key)" v-bind:class="{song: 1, hr: 1, active: playing == key}"
+                v-for='song,key in songs'>
+                <div class='name'>{{song.name}}</div>
+                <div class='author'>{{song.author}}
+                    <span class="duration">{{song.duration}}</span>
+                </div>
+            </div>
+        </div>
+
+        <a href='http://emerge.cc' class='logo'>
+            <i>Gadget Series, Vol.1</i>
+            <br>
+            <br>
+            Made with ♥ by <BR><B>EMERGE</B></a>
+
+
+        <div v-if='!connected' class="mask">
+            Please connect to Gadget's Wi-Fi Hotspot
+            <br>
+            <br>
+            <br>
+            <b>Music Box (Gadget)</b>
+            <br>
+            <br>
+            <br>
+            and Refresh
+        </div>
+    </div>
+    <script>
+        var MIDIUtils = {
+            noteNameToNoteNumber: function (name) {
+                return noteMap[name];
+            },
+            noteNumberToFrequency: function (note) {
+                return 440.0 * Math.pow(2, (note - 69.0) / 12.0);
+            },
+            noteNumberToName: function (note) {
+                return noteNumberMap[note];
+            },
+            frequencyToNoteNumber: function (f) {
+                return Math.round(12.0 * getBaseLog(f / 440.0, 2) + 69);
+            }
+        };
+
+        MIDI.Player.addListener(function (data) { // set it to your own function!
+            var now = data.now; // where we are now
+            var end = data.end; // time when song ends
+            var channel = data.channel; // channel note is playing on
+            var message = data.message; // 128 is noteOff, 144 is noteOn
+            if (message == 128) {
+                console.log("Off", data.note);
+                incoming(data.note, 0);
+            } else if (message == 144) {
+                console.log("On", data.note);
+                incoming(data.note, 1);
+                // xsend(0, Math.round(1000000 / MIDIUtils.noteNumberToFrequency(data.note)));
+            }
+            var note = data.note; // the note
+            var velocity = data.velocity; // the velocity of the note
+            console.log(channel);
+        });
+        var connection = new WebSocket('ws://192.168.43.1:81/', ['arduino']);
+        connection.onopen = function () {
+            connection.send('Connect ' + new Date());
+            window.data.connected = true;
+        };
+        connection.onerror = function (error) {
+            console.log('WebSocket Error ', error);
+        };
+        connection.onmessage = function (e) {
+            console.log('Server: ', e.data);
+        };
+        connection.onclose = function () {
+            window.data.connected = -1;
+            console.log('WebSocket connection closed');
+        };
+
+        var keys = [0, 0, 0];
+
+        function incoming(key, onoff) {
+            if (onoff == 1) {
+                //allocate keys
+                //kick one out..
+                for (var i = 0; i < 3; i++) {
+                    if (keys[i] == key) {
+                        return; //ignore
+                    }
+                }
+
+                var rand = Math.round(Math.random() * 3);
+                for (var i = 0; i < 3; i++) {
+                    if (keys[i] == 0) {
+                        rand = i;
+                        break;
+                    }
+                }
+                keys[rand] = key;
+                xsend(rand, Math.round(1000000 / MIDIUtils.noteNumberToFrequency(key)))
+            } else {
+                for (var i = 0; i < 3; i++) {
+                    if (keys[i] == key) {
+                        keys[i] = 0;
+                        xsend(i, 0)
+                        break;
+                    }
+                }
+            }
+        }
+
+        function dsend(a, b, c) {
+            var str = 'A' + a + ":" + b + ":" + c;
+            // console.log('val: ' + str);
+            connection.send(str);
+        }
+
+        function xsend(key, value) {
+            var str = 'X' + key + ":" + value;
+            // console.log('val: ' + str);
+            connection.send(str);
+        }
+
+        MIDI.Player.loadFile("./midi/Mario-Sheet-Music-Overworld-Main-Theme.mid", function () {
+
+        });
+
+        function play() {
+            if (data.playing == -1 || !data.songs[data.playing]) {
+                //stop
+                try {
+                    MIDI.Player.stop();
+                } catch (e) {
+
+                }
+                dsend(0, 0, 0);
+            } else {
+                console.log("loading")
+                var song = data.songs[data.playing];
+                console.log(song);
+                MIDI.Player.BPM = song.bpm;
+                MIDI.Player.loadFile(song.midi, function () {
+                    MIDI.Player.start()
+                });
+            }
+        }
+
+        new Vue({
+            el: '#app',
+            data: data,
+            watch: {
+                playing: function () {
+                    play();
+                }
+            },
+            methods: {
+                select: function (i) {
+                    data.playing = i;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
