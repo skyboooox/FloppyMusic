@@ -18,3 +18,7 @@
 | [arduinoWebSockets](https://github.com/Links2004/arduinoWebSockets) | 2.1.1  |
 | [arduinojson](https://arduinojson.org/)                      | 6.19.0 |
 
+
+
+[^power by EMERGE]: 
+
