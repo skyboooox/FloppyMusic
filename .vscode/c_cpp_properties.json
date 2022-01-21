@@ -194,6 +194,8 @@
                 "C:\\Users\\zcj92\\Documents\\Arduino\\libraries\\Adafruit_BusIO",
                 "C:\\Users\\zcj92\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\2.0.2\\libraries\\Wire\\src",
                 "C:\\Users\\zcj92\\Documents\\Arduino\\libraries\\ArduinoJson\\src",
+                "C:\\Users\\zcj92\\Documents\\Arduino\\libraries\\arduinoWebSockets-master\\src",
+                "C:\\Users\\zcj92\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\2.0.2\\libraries\\WiFiClientSecure\\src",
                 "C:\\Users\\zcj92\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\2.0.2\\libraries\\SPI\\src",
                 "c:\\users\\zcj92\\appdata\\local\\arduino15\\packages\\esp32\\tools\\xtensa-esp32s2-elf-gcc\\gcc8_4_0-esp-2021r2\\xtensa-esp32s2-elf\\include\\c++\\8.4.0",
                 "c:\\users\\zcj92\\appdata\\local\\arduino15\\packages\\esp32\\tools\\xtensa-esp32s2-elf-gcc\\gcc8_4_0-esp-2021r2\\xtensa-esp32s2-elf\\include\\c++\\8.4.0\\xtensa-esp32s2-elf",

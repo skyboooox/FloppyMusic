@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emerge / Floppy Piano</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      /* background-color: #ededec; */
+    }
+
+    .container {
+      position: relative;
+    }
+
+    .background_img {}
+
+    .save_icon {
+      position: absolute;
+      left: 5%;
+      top: 30%;
+      width: 20%;
+    }
+
+    .playlist {
+      position: absolute;
+      top: 40%;
+      left: 20%;
+      width: 100%;
+      transform: skewY(-20deg);
+      padding-left: 10%;
+
+      overflow-x: hidden;
+      font-weight: bolder;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    .large {
+      font-size: 2rem;
+      letter-spacing: -0.1rem;
+      color: #333;
+    }
+
+    .hr,
+    .line {
+      background: #34164A;
+      padding-left: 1rem;
+      padding-top: 0.3rem;
+      padding-bottom: 0.3rem;
+      margin-top: 0.3rem;
+      /* filter: blur(5px); */
+      transition: all 0.5s ease;
+      transform: translateX(100px);
+    }
+
+    .active {
+      transform: translateX(150px);
+
+      opacity: 0.5;
+    }
+
+    .song {
+      color: white;
+    }
+
+    .name {
+      font-size: 0.9rem;
+    }
+
+    .author {
+      font-weight: lighter;
+      font-size: 0.7rem;
+    }
+
+    .duration {
+      opacity: 0.5;
+      padding: 0.5rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <img src="./img/bk.jpg" alt="background" class="background_img" style="width:100%;">
+    <img src="./img/save_soild.png" class="save_icon">
+    <div class="playlist">
+      <div class="song hr active">
+        <div class="name">/ IDLE</div>
+        <div class="author">STOP</div>
+      </div>
+      <div class="song hr">
+        <div class="name">Super Mario Theme</div>
+        <div class="author">Nintendo
+          <span class="duration">00:31</span>
+        </div>
+      </div>
+      <div class="song hr">
+        <div class="name">Super Mario Theme</div>
+        <div class="author">Nintendo
+          <span class="duration">00:31</span>
+        </div>
+      </div>
+      <div class="song hr">
+        <div class="name">Super Mario Theme</div>
+        <div class="author">Nintendo
+          <span class="duration">00:31</span>
+        </div>
+      </div>
+      <div class="song hr">
+        <div class="name">Super Mario Theme</div>
+        <div class="author">Nintendo
+          <span class="duration">00:31</span>
+        </div>
+      </div>
+    </div>
+
+
+
+  </div>
+
+</body>
+
+</html>
