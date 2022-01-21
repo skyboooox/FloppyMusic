@@ -2,7 +2,7 @@
 
 
 
-
+![0054](\src\0054.png)
 
 | 使用的硬件 | 型号         |
 | ---------- | ------------ |
@@ -18,7 +18,11 @@
 | [arduinoWebSockets](https://github.com/Links2004/arduinoWebSockets) | 2.1.1  |
 | [arduinojson](https://arduinojson.org/)                      | 6.19.0 |
 
+------
 
+<center>power by</center>	
 
-[^power by EMERGE]: 
+<center><a href="http://emerge.cc/">EMERGE</a></center>
+
+------
 
