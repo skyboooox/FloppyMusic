@@ -2,7 +2,7 @@
 
 
 
-![0054](src\0054.png)
+![0054](https://github.com/skyboooox/FloppyMusic/blob/main/src/0054.png)
 
 | 使用的硬件 | 型号         |
 | ---------- | ------------ |
